@@ -1,6 +1,9 @@
 import socket
 import datetime
 
+# This is the socket timeout we set initially
+DEFAULT_TIMEOUT = 20
+
 class SVDRPConnection:
     from pysvdrp.channels import list_channels, get_channel, move_channel
     from pysvdrp.plugins import list_plugins
@@ -16,6 +19,9 @@ class SVDRPConnection:
         # Connect to VDR
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
+
+        # Set timeout to prevent "blocking forever" situations
+        self.socket.settimeout(DEFAULT_TIMEOUT)
 
         # Open a reading file handler. Expect UTF-8 encoding at first
         self._readfh = self.socket.makefile(mode="r", encoding="UTF-8")
@@ -46,7 +52,18 @@ class SVDRPConnection:
 
     # Properly disconnect from VDR to prevent "lost connection" log messages
     def __del__(self):
-        self._send("QUIT")
+        # Give VDR 5 seconds to handle the "QUIT" command
+        self.socket.settimeout(5)
+
+        # Try to send "QUIT" now
+        # We don't care about errors happening here
+        try:
+            self._send("QUIT")
+        except:
+            pass
+
+        # Then properly close socket
+        self.socket.close()
 
     # Converts the time format sent by VDR to a python datetime object
     def _asctime2datetime(self, asctime: str):
