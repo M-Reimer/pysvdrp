@@ -49,6 +49,27 @@ def move_channel(self, source, target):
     parts = message.split('"')
     return int(parts[1]), int(parts[3])
 
+def delete_channel(self, channel):
+    """
+    Deletes given channel. "channel" may be either a channel number, a channel
+    id or an "Channel" object whose channel id is used.
+    """
+
+    # If "Channel" object is given, get the channel id
+    if isinstance(channel, Channel):
+        channel = channel.channelid
+
+    # TODO: Allow this to pass directly for VDR versions with allow channelids
+    # directly for "DELC"
+    if isinstance(channel, str):
+        channel = self.get_channel(channel).number
+
+    self._send("DELC " + str(channel))
+    status, message = self._recvmsg()
+
+    if status != 250:
+        raise SVDRPError(message, status)
+
 
 # Objects of type "Channel" encapsulate the information of one channel
 class Channel:

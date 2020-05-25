@@ -5,7 +5,7 @@ import datetime
 DEFAULT_TIMEOUT = 20
 
 class SVDRPConnection:
-    from pysvdrp.channels import list_channels, get_channel, move_channel
+    from pysvdrp.channels import list_channels, get_channel, move_channel, delete_channel
     from pysvdrp.plugins import list_plugins
     from pysvdrp.tools import set_channel_position
 
