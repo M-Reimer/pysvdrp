@@ -1,5 +1,6 @@
 import socket
 import datetime
+import cchardet
 
 # This is the socket timeout we set initially
 DEFAULT_TIMEOUT = 20
@@ -23,10 +24,11 @@ class SVDRPConnection:
         # Set timeout to prevent "blocking forever" situations
         self.socket.settimeout(DEFAULT_TIMEOUT)
 
-        # Open a reading file handler. Expect UTF-8 encoding at first
-        self._readfh = self.socket.makefile(mode="r", encoding="UTF-8")
+        # Open a reading binary file handler.
+        self._readfh = self.socket.makefile(mode="rb")
 
         # Read VDR's status welcome message
+        self.encoding = "ascii"
         status, message = self._recvmsg()
         if status != 220:
             raise SVDRError(message, status)
@@ -41,11 +43,6 @@ class SVDRPConnection:
 
         # Parse hosttime
         self.vdrtime = self._asctime2datetime(hosttime)
-
-        # If the actual encoding is not UTF-8, then reopen reading file handler
-        if (self.encoding != "UTF-8"):
-            self._readfh.close()
-            self._readfh = self.socket.makefile(mode="r", encoding=self.encoding)
 
         # Open a writing file handler
         self._writefh = self.socket.makefile(mode="w", encoding=self.encoding)
@@ -84,7 +81,16 @@ class SVDRPConnection:
 
     # Receives a one-line message from VDR
     def _recvmsg(self):
-        line = self._readfh.readline().rstrip("\n")
+        line = self._readfh.readline()
+
+        # Try to decode with the encoding, used by VDR, first. If this fails
+        # (bad DVB data) then try to detect the correct encoding.
+        try:
+            line = line.decode(self.encoding)
+        except Exception as err:
+            line = line.decode(cchardet.detect(line).get('encoding', 'ascii'), errors="surrogateescape")
+
+        line.rstrip("\n")
         status = line[:3]
         cont = line[3:4]
         message = line[4:]
