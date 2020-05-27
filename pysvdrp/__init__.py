@@ -90,7 +90,7 @@ class SVDRPConnection:
         except Exception as err:
             line = line.decode(cchardet.detect(line).get('encoding', 'ascii'), errors="surrogateescape")
 
-        line.rstrip("\n")
+        line = line.rstrip("\r\n")
         status = line[:3]
         cont = line[3:4]
         message = line[4:]
