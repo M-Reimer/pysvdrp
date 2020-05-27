@@ -6,7 +6,7 @@ def list_plugins(self):
     status, data = self._recvlist()
     data.pop(0) # Remove first item ("Available plugins:")
     data.pop()  # Remove last item ("End of plugin list")
-    result = PluginList([])
+    result = Plugins()
     for line in data:
         name, version, dummy, description = line.split(" ", 3)
         result.append({
@@ -18,7 +18,7 @@ def list_plugins(self):
 
 # All this class does is to allow to use the "in" keyword to search for a
 # plugin name directly.
-class PluginList(UserList):
+class Plugins(UserList):
     def __contains__(self, obj):
         for item in self:
             if item["name"] == obj:

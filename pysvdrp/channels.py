@@ -10,7 +10,7 @@ def list_channels(self, withgroups: bool = False):
     """
     self._send("LSTC" + (" :groups" if withgroups else ""))
     status, data = self._recvlist()
-    result = ChannelList([])
+    result = Channels()
     groupid = 0
     for line in data:
         number, channelstring = line.split(" ", 1)
@@ -184,7 +184,7 @@ class Channel:
 
 
 # "Special" list for channels with custom "find" methods
-class ChannelList(UserList):
+class Channels(UserList):
     def find_by_number(self, aNumber):
         for index, channel in enumerate(self):
             if channel.number == aNumber:
@@ -196,3 +196,7 @@ class ChannelList(UserList):
             if channel.channelid == aID:
                 return index;
         raise ValueError("Channel ID '" + str(aID) + "' is not in channel list");
+
+    def __setitem__(self, key, value):
+        if not isinstance(value, Channel):
+            raise TypeError("A Channels object can only contain instances of Channel")
