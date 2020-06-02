@@ -196,7 +196,3 @@ class Channels(UserList):
             if channel.channelid == aID:
                 return index;
         raise ValueError("Channel ID '" + str(aID) + "' is not in channel list");
-
-    def __setitem__(self, key, value):
-        if not isinstance(value, Channel):
-            raise TypeError("A Channels object can only contain instances of Channel")
