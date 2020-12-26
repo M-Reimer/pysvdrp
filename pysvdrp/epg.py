@@ -39,43 +39,9 @@ def list_epg(self, channel = '', filter = ''):
     self._send(" ".join(cmd))
     status, data = self._recvlist()
     data.pop() # Remove "End of EPG data"
-    return _parse_epg(data)
 
-
-def _parse_epg(data):
     schedules = Schedules()
-    for line in data:
-        if line[0] == "C":
-            schedule = Schedule()
-            dummy, channelid, schedule.channelname = line.split(" ", 2)
-            schedules[channelid] = schedule
-            print(schedules)
-        elif line[0] == "c":
-            schedule = None
-        elif line[0] == "E":
-            event = Event()
-            dummy, event.eventid, event.starttime, event.duration, event.tableid, event.version = line.split(" ")
-            schedule.append(event)
-        elif line[0] == "e":
-            event = None
-        elif line[0] == "T":
-            event.title = line[2:]
-        elif line[0] == "S":
-            event.shorttext = line[2:]
-        elif line[0] == "D":
-            event.description = line[2:]
-        elif line[0] == "G":
-            event.contents.append(line[2:])
-        elif line[0] == "R":
-            event.parentalrating = line[2:]
-        elif line[0] == "X":
-            event.components.append(line[2:])
-        elif line[0] == "V":
-            event.vps = line[2:]
-        elif line[0] == "@":
-            event.aux = line[2:]
-        else:
-            raise ValueError("Unknown tag while parsing EPG: " + line[0])
+    schedules.read(iter(data))
     return schedules
 
 
@@ -84,16 +50,102 @@ class Schedules(UserDict):
         UserDict.__setitem__(self, key, value)
         value.channelid = key
 
+    def read(self, iterator: iter):
+        for line in iterator:
+            if line[0] == "C":
+                schedule = Schedule()
+                dummy, channelid, schedule.channelname = line.split(" ", 2)
+                self[channelid] = schedule
+                schedule.read(iterator)
+            elif line[0] == "c":
+                pass
+            else:
+                raise ValueError("Unknown tag while parsing EPG Schedules: " + line[0])
+
+    def __str__(self):
+        result = ""
+        for channelid, schedule in self.items():
+            result += " ".join(["C", channelid, schedule.channelname]) + "\n"
+            result += str(schedule)
+            result += "c\n"
+        return result
+
 
 class Schedule(UserList):
     def __init__(self, initlist=None):
         UserList.__init__(self, initlist)
-        self.tableid = 0
-        self.version = 0
+        self.channelname = ""
+
+    def read(self, iterator: iter):
+        for line in iterator:
+            if line[0] == "E":
+                event = Event()
+                dummy, event.eventid, event.starttime, event.duration, event.tableid, event.version = line.split(" ")
+                self.append(event)
+                event.read(iterator)
+            elif line[0] == "e":
+                pass
+            elif line[0] == "c":
+                return
+            else:
+                raise ValueError("Unknown tag while parsing EPG Schedules: " + line[0])
+
+    def __str__(self):
+        result = ""
+        for event in self:
+            result += " ".join(["E", event.eventid, event.starttime, event.duration, event.tableid, event.version]) + "\n"
+            result += str(event)
+            result += "e\n"
+        return result
 
 
 class Event:
-    def __init__(self, epgdata = []):
-        epgdata = iter(epgdata)
-        self.contents = []
-        self.components = []
+    def __init__(self):
+        self.tableid = 0
+        self.version = 0
+
+    def read(self, iterator: iter):
+        for line in iterator:
+            if line[0] == "T":
+                self.title = line[2:]
+            elif line[0] == "S":
+                self.shorttext = line[2:]
+            elif line[0] == "D":
+                self.description = line[2:]
+            elif line[0] == "G":
+                self.contents = line[2:].split(" ")
+            elif line[0] == "R":
+                self.parentalrating = line[2:]
+            elif line[0] == "X":
+                if not hasattr(self, "components"):
+                    self.components = []
+                self.components.append(line[2:])
+            elif line[0] == "V":
+                self.vps = line[2:]
+            elif line[0] == "@":
+                self.aux = line[2:]
+            elif line[0] == "e":
+                return
+            else:
+                raise ValueError("Unknown tag while parsing EPG: " + line[0])
+
+    def __str__(self):
+        result = ""
+        if hasattr(self, "title"):
+            result += "T " + self.title + "\n"
+        if hasattr(self, "shorttext"):
+            result += "S " + self.shorttext + "\n"
+        if hasattr(self, "description"):
+            result += "D " + self.description + "\n"
+        if hasattr(self, "contents"):
+            result += "G " + " ".join(self.contents) + "\n"
+        if hasattr(self, "parentalrating"):
+            result += "R " + self.parentalrating + "\n"
+        if hasattr(self, "components"):
+            for component in self.components:
+                result += "X " + component + "\n"
+        if hasattr(self, "vps"):
+            result += "V " + self.vps + "\n"
+        if hasattr(self, "aux"):
+            result += "@ " + self.aux + "\n"
+        return result
