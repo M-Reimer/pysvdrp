@@ -25,7 +25,7 @@ class SVDRPConnection:
     from pysvdrp.channels import list_channels, get_channel, move_channel, delete_channel
     from pysvdrp.plugins import list_plugins
     from pysvdrp.tools import set_channel_position
-    from pysvdrp.epg import list_epg
+    from pysvdrp.epg import list_epg, clear_epg
 
     def __init__(self, host: str = "127.0.0.1", port: int = 6419) -> None:
         """

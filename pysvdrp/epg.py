@@ -33,7 +33,7 @@ def list_epg(self, channel = '', filter = ''):
 
     cmd = ["LSTE"]
     if channel:
-        cmd.append(channel)
+        cmd.append(str(channel))
     if filter:
         cmd.append(filter)
     self._send(" ".join(cmd))
@@ -43,6 +43,27 @@ def list_epg(self, channel = '', filter = ''):
     schedules = Schedules()
     schedules.read(iter(data))
     return schedules
+
+def clear_epg(self, channel = ""):
+    """
+    Clears epg data
+
+    channel: Optional channel to clear EPG for (all channels if not given)
+             May be one of "channel number", "channel id" and "Channel object"
+    """
+
+    # If "Channel" object is given, get the channel id
+    if isinstance(channel, Channel):
+        channel = channel.channelid
+
+    cmd = ["CLRE"]
+    if channel:
+        cmd.append(str(channel))
+    self._send(" ".join(cmd))
+    status, message = self._recvmsg()
+
+    if status != 250:
+        raise SVDRPError(message, status)
 
 
 class Schedules(UserDict):
