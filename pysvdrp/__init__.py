@@ -15,7 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import socket
-import datetime
+import time
 import cchardet
 
 # This is the socket timeout we set initially
@@ -59,7 +59,7 @@ class SVDRPConnection:
         self.vdrversnum = int(major) * 10000 + int(minor) * 100 + int(revision)
 
         # Parse hosttime
-        self.vdrtime = self._asctime2datetime(hosttime)
+        self.vdrtime = self._asctime2time(hosttime)
 
         # Open a writing file handler
         self._writefh = self.socket.makefile(mode="w", encoding=self.encoding)
@@ -79,22 +79,10 @@ class SVDRPConnection:
         # Then properly close socket
         self.socket.close()
 
-    # Converts the time format sent by VDR to a python datetime object
-    def _asctime2datetime(self, asctime: str):
-        monthconv = {value: index for index, value in enumerate([
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ])}
-        dummy, monthname, day, timestr, year = asctime.split()
-        hour, minute, second = timestr.split(":")
-        return datetime.datetime(
-            year = int(year),
-            month = monthconv[monthname] + 1,
-            day = int(day),
-            hour = int(hour),
-            minute = int(minute),
-            second = int(second)
-        )
+    # Converts the time format sent by VDR to seconds since epoch
+    def _asctime2time(self, asctime: str) -> int:
+        #Sun Dec 27 17:15:23 2020
+        return time.mktime(time.strptime(asctime, "%a %b %d %H:%M:%S %Y"))
 
     # Receives a one-line message from VDR
     def _recvmsg(self):
