@@ -150,6 +150,18 @@ class Event:
             else:
                 raise ValueError("Unknown tag while parsing EPG: " + line[0])
 
+    # Wrap starttime in an setter/getter combination to allow automagic event
+    # id generation (taken from xmltv2vdr.pl)
+    @property
+    def starttime(self):
+        return self._starttime
+
+    @starttime.setter
+    def starttime(self, value):
+        if not hasattr(self, "eventid"):
+            self.eventid = int(value / 60 % 0xFFFF)
+        self._starttime = value
+
     def __str__(self):
         result = ""
         if hasattr(self, "title"):
