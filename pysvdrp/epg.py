@@ -75,7 +75,7 @@ class Schedules(UserDict):
         for line in iterator:
             if line[0] == "C":
                 schedule = Schedule()
-                dummy, channelid, schedule.channelname = line.split(" ", 2)
+                channelid, schedule.channelname = line.split(" ", 2)[1:]
                 self[channelid] = schedule
                 schedule.read(iterator)
             elif line[0] == "c":
@@ -101,7 +101,7 @@ class Schedule(UserList):
         for line in iterator:
             if line[0] == "E":
                 event = Event()
-                dummy, event.eventid, event.starttime, event.duration, event.tableid, event.version = line.split(" ")
+                event.eventid, event.starttime, event.duration, event.tableid, event.version = line.split(" ")[1:]
                 self.append(event)
                 event.read(iterator)
             elif line[0] == "e":
@@ -114,7 +114,7 @@ class Schedule(UserList):
     def __str__(self):
         result = ""
         for event in self:
-            result += " ".join(["E", event.eventid, event.starttime, event.duration, event.tableid, event.version]) + "\n"
+            result += " ".join(map(str, ["E", event.eventid, event.starttime, event.duration, event.tableid, event.version])) + "\n"
             result += str(event)
             result += "e\n"
         return result
@@ -150,17 +150,26 @@ class Event:
             else:
                 raise ValueError("Unknown tag while parsing EPG: " + line[0])
 
-    # Wrap starttime in an setter/getter combination to allow automagic event
-    # id generation (taken from xmltv2vdr.pl)
     @property
     def starttime(self):
         return self._starttime
 
     @starttime.setter
     def starttime(self, value):
+        self._starttime = int(value)
+
+        # We do automagic event id generation here if not already set
+        # taken from xmltv2vdr.pl
         if not hasattr(self, "eventid"):
             self.eventid = int(value / 60 % 0xFFFF)
-        self._starttime = value
+
+    @property
+    def duration(self):
+        return self._duration
+
+    @duration.setter
+    def duration(self, value):
+        self._duration = int(value)
 
     def __str__(self):
         result = ""
