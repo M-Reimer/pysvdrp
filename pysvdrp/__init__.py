@@ -17,6 +17,7 @@
 import socket
 import time
 import cchardet
+from pysvdrp.exceptions import SVDRPError
 
 # This is the socket timeout we set initially
 DEFAULT_TIMEOUT = 20
@@ -25,7 +26,7 @@ class SVDRPConnection:
     from pysvdrp.channels import list_channels, get_channel, move_channel, delete_channel
     from pysvdrp.plugins import list_plugins
     from pysvdrp.tools import set_channel_position
-    from pysvdrp.epg import list_epg, clear_epg
+    from pysvdrp.epg import list_epg, clear_epg, put_epg
 
     def __init__(self, host: str = "127.0.0.1", port: int = 6419) -> None:
         """
@@ -122,9 +123,3 @@ class SVDRPConnection:
     def _send(self, command: str):
         self._writefh.write(command + "\n")
         self._writefh.flush()
-
-
-class SVDRPError(Exception):
-    def __init__(self, message, status):
-        super().__init__(message)
-        self.status = status

@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections import UserList
+from pysvdr.exceptions import SVDRPError
 
 def list_channels(self, withgroups: bool = False):
     """

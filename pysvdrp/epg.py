@@ -17,6 +17,7 @@
 from collections import UserList
 from collections import UserDict
 from pysvdrp.channels import Channel
+from pysvdrp.exceptions import SVDRPError
 
 def list_epg(self, channel = '', filter = ''):
     """
@@ -64,6 +65,22 @@ def clear_epg(self, channel = ""):
 
     if status != 250:
         raise SVDRPError(message, status)
+
+def put_epg(self, data):
+    self._send("PUTE")
+    status, message = self._recvmsg()
+    if status != 354:
+        raise SVDRPError(message, status)
+
+    for line in str(data).split("\n"):
+        if line.strip() != "":
+            self._send(line)
+    self._send(".")
+
+    status, message = self._recvmsg()
+    if status != 250:
+        raise SVDRPError(message, status)
+
 
 
 class Schedules(UserDict):
