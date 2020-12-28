@@ -132,7 +132,7 @@ class Event:
             elif line[0] == "S":
                 self.shorttext = line[2:]
             elif line[0] == "D":
-                self.description = line[2:]
+                self.description = line[2:].replace("|", "\n")
             elif line[0] == "G":
                 self.contents = line[2:].split(" ")
             elif line[0] == "R":
@@ -174,11 +174,11 @@ class Event:
     def __str__(self):
         result = ""
         if hasattr(self, "title"):
-            result += "T " + self.title + "\n"
+            result += "T " + self.title.replace("\n", " ") + "\n"
         if hasattr(self, "shorttext"):
-            result += "S " + self.shorttext + "\n"
+            result += "S " + self.shorttext.replace("\n", " ") + "\n"
         if hasattr(self, "description"):
-            result += "D " + self.description + "\n"
+            result += "D " + self.description.replace("\n", "|") + "\n"
         if hasattr(self, "contents"):
             result += "G " + " ".join(self.contents) + "\n"
         if hasattr(self, "parentalrating"):
