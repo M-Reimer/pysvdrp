@@ -17,7 +17,7 @@
 from collections import UserList
 from collections import UserDict
 from pysvdrp.channels import Channel
-from pysvdrp.exceptions import SVDRPError
+from pysvdrp.exceptions import SVDRPException, ActionNotTaken
 
 def list_epg(self, channel = '', filter = ''):
     """
@@ -51,6 +51,8 @@ def clear_epg(self, channel = ""):
 
     channel: Optional channel to clear EPG for (all channels if not given)
              May be one of "channel number", "channel id" and "Channel object"
+
+    Returns True if there was EPG data to clear. False otherwise.
     """
 
     # If "Channel" object is given, get the channel id
@@ -61,16 +63,24 @@ def clear_epg(self, channel = ""):
     if channel:
         cmd.append(str(channel))
     self._send(" ".join(cmd))
-    status, message = self._recvmsg()
+
+    # Catch the ActionNotTaken exception raised if no EPG data exists
+    try:
+        status, message = self._recvmsg()
+    except ActionNotTaken:
+        return False
 
     if status != 250:
-        raise SVDRPError(message, status)
+        raise SVDRPException(message, status)
+
+    return True
+
 
 def put_epg(self, data):
     self._send("PUTE")
     status, message = self._recvmsg()
     if status != 354:
-        raise SVDRPError(message, status)
+        raise SVDRPException(message, status)
 
     for line in str(data).split("\n"):
         if line.strip() != "":
@@ -79,8 +89,8 @@ def put_epg(self, data):
 
     status, message = self._recvmsg()
     if status != 250:
-        raise SVDRPError(message, status)
 
+        raise SVDRPException(message, status)
 
 
 class Schedules(UserDict):

@@ -17,7 +17,7 @@
 import socket
 import time
 import cchardet
-from pysvdrp.exceptions import SVDRPError
+import pysvdrp.exceptions as ex
 
 # This is the socket timeout we set initially
 DEFAULT_TIMEOUT = 20
@@ -49,7 +49,7 @@ class SVDRPConnection:
         self.encoding = "ascii"
         status, message = self._recvmsg()
         if status != 220:
-            raise SVDRError(message, status)
+            raise ex.SVDRException(message, status)
 
         # VDR returns 3 strings, each one separated with "; "
         hostinfo, hosttime, self.encoding = message.split("; ")
@@ -101,10 +101,24 @@ class SVDRPConnection:
         cont = line[3:4]
         message = line[4:]
 
-        if status.startswith("5"):
-            raise SVDRPError(status + " " + message, int(status))
-
         status = int(status)
+        if status == 451:
+            raise ex.ActionAborted(message, status)
+        elif status == 500:
+            raise ex.CommandUnrecognized(message, status)
+        elif status == 501:
+            raise ex.ParameterError(message, status)
+        elif status == 502:
+            raise ex.CommandNotImplemented(message, status)
+        elif status == 504:
+            raise ex.ParameterNotImplemented(message, status)
+        elif status == 550:
+            raise ex.ActionNotTaken(message, status)
+        elif status == 554:
+            raise ex.TransactionFailed(message, status)
+        elif 500 <= status < 600 :
+            raise ex.SVDRPException(message, status)
+
         if cont == "-":
             status *= -1
 

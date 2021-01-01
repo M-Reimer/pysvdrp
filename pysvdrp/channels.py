@@ -15,7 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections import UserList
-from pysvdr.exceptions import SVDRPError
+from pysvdrp.exceptions import SVDRPException
 
 def list_channels(self, withgroups: bool = False):
     """
@@ -61,7 +61,7 @@ def move_channel(self, source, target):
     status, message = self._recvmsg()
 
     if status != 250:
-        raise SVDRPError(message, status)
+        raise SVDRPException(message, status)
 
     parts = message.split('"')
     return int(parts[1]), int(parts[3])
@@ -85,7 +85,7 @@ def delete_channel(self, channel):
     status, message = self._recvmsg()
 
     if status != 250:
-        raise SVDRPError(message, status)
+        raise SVDRPException(message, status)
 
 
 # Objects of type "Channel" encapsulate the information of one channel
