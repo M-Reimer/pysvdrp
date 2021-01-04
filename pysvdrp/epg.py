@@ -38,12 +38,18 @@ def list_epg(self, channel = '', filter = ''):
     if filter:
         cmd.append(filter)
     self._send(" ".join(cmd))
-    status, data = self._recvlist()
-    data.pop() # Remove "End of EPG data"
 
     schedules = Schedules()
-    schedules.read(iter(data))
+
+    try:
+        status, data = self._recvlist()
+        data.pop() # Remove "End of EPG data"
+        schedules.read(iter(data))
+    except ActionNotTaken:
+        pass # Just ignore "No schedule found" error
+
     return schedules
+
 
 def clear_epg(self, channel = ""):
     """
@@ -89,7 +95,6 @@ def put_epg(self, data):
 
     status, message = self._recvmsg()
     if status != 250:
-
         raise SVDRPException(message, status)
 
 
